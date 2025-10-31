@@ -49,11 +49,11 @@
         <!-- FIX: v-for com filtro pra ignorar nulls + key safe -->
         <div
           v-for="msg in currentConversation.messages.filter(msg => msg != null)"
-          :key="msg?.id || 'unknown-msg'"  <!-- <-- NOVO: Optional chaining no key; fallback se id null -->
-          :class="['message', { 'sent': msg.author?.id === authStore.user?.id }]"  <!-- <-- NOVO: Safe .author.id -->
+          :key="msg?.id || 'unknown-msg'"
+          :class="['message', { 'sent': msg.author?.id === authStore.user?.id }]"
         >
           <div class="message-content">
-            <strong>{{ msg.author?.username || 'Anônimo' }}:</strong>  <!-- <-- NOVO: Fallback se author null -->
+            <strong>{{ msg.author?.username || 'Anônimo' }}:</strong>
             <p>{{ msg.content }}</p>
             <small>{{ formatTime(msg.created_at) }}</small>
           </div>
@@ -79,19 +79,19 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import axios from 'axios'
-import { useAuthStore } from '@/stores/auth'  // Ajuste pro seu store de auth
+import { useAuthStore } from '@/stores/auth'
 
 const route = useRoute()
 const router = useRouter()
 const authStore = useAuthStore()
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+const API_BASE = import.meta.env.VITE_API_BASE
 const conversations = ref([])
-const currentConversationId = ref(route.params.id)  // ID da rota /directs/:id
+const currentConversationId = ref(route.params.id) 
 const currentConversation = ref(null)
 const newMessage = ref('')
 const sending = ref(false)
-const loading = ref(false)  // NOVO: Pra loading na conv específica
+const loading = ref(false)
 
 const headers = computed(() => ({ Authorization: `Bearer ${authStore.token}` }))
 
@@ -114,7 +114,7 @@ const fetchConversations = async () => {
 const fetchConversationById = async (convId) => {
   try {
     loading.value = true
-    const res = await axios.get(`${API_BASE}conversations/${convId}/`, { headers: headers.value })  // Assuma endpoint GET pra conv única (adicione se não tiver)
+    const res = await axios.get(`${API_BASE}conversations/${convId}/`, { headers: headers.value })
     const convData = res.data  // Assume convData não null
     if (!convData) {
       console.error('Resposta da API vazia pra conv')
@@ -160,7 +160,7 @@ const openConversation = async (convId) => {
 
 // Pega o outro participante (não o logado)
 const getOtherParticipant = (conv) => {
-  if (!conv || !conv.participants) return { username: 'Desconhecido', profile_picture: '' }  // FIX: Early return se conv null
+  if (!conv || !conv.participants) return { username: 'Desconhecido', profile_picture: '' }
   return conv.participants.find(p => p.id !== authStore.user?.id) || { username: 'Desconhecido', profile_picture: '' }
 }
 
@@ -193,7 +193,7 @@ const sendMessage = async () => {
 // Volta pra lista
 const backToList = () => {
   currentConversation.value = null
-  router.push('/directs')  // Rota base pra lista (adicione se quiser: { path: '/directs', component: DirectView })
+  router.push('/directs')
 }
 
 // Formata tempo (simples)
