@@ -64,7 +64,7 @@ onMounted(async () => {
 const loadProfile = async () => {
   loading.value = true
   error.value = ''
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const API_BASE = import.meta.env.VITE_API_BASE
   try {
     const response = await axios.get(`${API_BASE}users/me/`)
     form.value.bio = response.data.bio || ''
@@ -101,7 +101,7 @@ const onFileChange = (e) => {
 const saveProfile = async () => {
   saving.value = true
   error.value = ''
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const API_BASE = import.meta.env.VITE_API_BASE
   try {
     const formData = new FormData()
     formData.append('bio', form.value.bio.trim() || '')  
@@ -145,16 +145,76 @@ const saveProfile = async () => {
 </script>
 
 <style scoped>
-.edit-profile-container { max-width: 500px; margin: 0 auto; padding: 20px; }
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-button { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
-header button:last-child { background: #28a745; }
-header button:last-child:disabled { background: #ccc; cursor: not-allowed; }
-.edit-form { display: flex; flex-direction: column; gap: 15px; }
-.field { display: flex; flex-direction: column; }
-.field label { font-weight: bold; margin-bottom: 5px; }
-.field textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; min-height: 100px; resize: vertical; }
-.field small { color: #666; font-size: 0.9em; }
-.loading, .error { text-align: center; padding: 40px; color: #666; }
-.error { color: red; }
+.edit-profile-container {
+    max-width: 500px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+header button:last-child {
+    background: #28a745;
+}
+
+header button:last-child:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.edit-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+}
+
+.field label {
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.field textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    min-height: 100px;
+    resize: vertical;
+}
+
+.field small {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.loading,
+.error {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.error {
+    color: red;
+}
 </style>

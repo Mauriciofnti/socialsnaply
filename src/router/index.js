@@ -7,6 +7,7 @@ import EditProfileView from '@/views/EditProfileView.vue'
 import UserListView from '@/views/UserListView.vue'
 import RegisterView from '@/views/RegisterView.vue'
 import EditPostView from '@/views/EditPostView.vue'
+import DirectView from '@/views/DirectView.vue'
 
 const routes = [
   { path: '/', redirect: '/feed' },
@@ -17,7 +18,8 @@ const routes = [
   { path: '/feed', component: FeedView, meta: { requiresAuth: true } },
   { path: '/profile/:id', component: ProfileView, meta: { requiresAuth: true } },
   { path: '/post/:id', component: PostView, meta: { requiresAuth: true } },  
-  { path: '/post/:id/edit', component: EditPostView, meta: { requiresAuth: true } }
+  { path: '/post/:id/edit', component: EditPostView, meta: { requiresAuth: true } },
+  { path: '/directs/:id', component: DirectView, meta: { requiresAuth: true } }
 ]
 
 const router = createRouter({

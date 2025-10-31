@@ -2,8 +2,8 @@
   <div class="login-container">
     <form @submit.prevent="handleLogin">
       <h2>Login</h2>
-      <input v-model="credentials.username" type="text" placeholder="Username" required />
-      <input v-model="credentials.password" type="password" placeholder="Senha" required autocomplete="current-password" />
+      <input v-model="credentials.username" type="text" placeholder="username" required autocomplete="username"/>
+      <input v-model="credentials.password" type="password" placeholder="senha" required autocomplete="current-password" />
       <button type="submit">Entrar</button>
       <p v-if="error" class="error">{{ error }}</p>
     </form>
@@ -45,8 +45,39 @@ const handleLogin = async () => {
 </script>
 
 <style scoped>
-.login-container { max-width: 300px; margin: 100px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-input, button { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
-button { background: #007bff; color: white; border: none; cursor: pointer; }
-.error { color: red; font-size: 0.9em; }
+
+.login-container {
+  font-size: 22px;
+  max-width: 300px;
+  margin: 100px auto;
+  padding: 20px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+input,
+button {
+  width: 90%;
+  padding: 10px;
+  margin: 10px 0;
+  box-sizing: border-box;
+}
+
+button {
+  background: #007bff;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+form{
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.error {
+  color: red;
+  font-size: 0.9em;
+}
 </style>

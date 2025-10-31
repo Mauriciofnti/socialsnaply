@@ -65,7 +65,7 @@ onMounted(async () => {
 const loadPost = async () => {
   loading.value = true
   error.value = ''
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const API_BASE = import.meta.env.VITE_API_BASE
   try {
     const [postRes, commentsRes] = await Promise.all([
       axios.get(`${API_BASE}posts/${postId}/`),
@@ -91,7 +91,7 @@ const likePost = () => postsStore.likePost(postId)
 const addComment = async () => {
   if (!newComment.value.trim()) return
   submitting.value = true
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const API_BASE = import.meta.env.VITE_API_BASE
   try {
     const response = await axios.post(`${API_BASE}posts/${postId}/comments/`, {
       content: newComment.value
@@ -108,7 +108,7 @@ const addComment = async () => {
 
 const deletePost = async (id) => {
   if (!confirm('Tem certeza que quer deletar este post?')) return
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const API_BASE = import.meta.env.VITE_API_BASE
   try {
     await axios.delete(`${API_BASE}posts/${id}/`)
     alert('Post deletado!')

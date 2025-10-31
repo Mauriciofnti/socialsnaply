@@ -31,12 +31,22 @@
           <span>{{ user.followers_count || 0 }} seguidores</span>
           <span>{{ user.following_count || 0 }} seguindo</span>
         </div>
-        <button 
-          @click="toggleFollowUser" 
-          v-if="user.id !== authStore.user?.id" 
-          :class="['follow-btn', { 'unfollow': isFollowing }]">
-          {{ isFollowing ? 'Deixar de seguir' : 'Seguir' }}
-        </button>
+        
+        <!-- NOVO: Botão Follow + DM (só pra outros users) -->
+        <div v-if="user.id !== authStore.user?.id" class="profile-actions">
+          <button 
+            @click="toggleFollowUser" 
+            :class="['follow-btn', { 'unfollow': isFollowing }]">
+            {{ isFollowing ? 'Deixar de seguir' : 'Seguir' }}
+          </button>
+          <button @click="startDM(user.id)" class="dm-btn">Mensagem</button>
+        </div>
+        <!-- FIM NOVO -->
+        
+        <!-- Próprio perfil: Sem botões de ação -->
+        <div v-else class="profile-actions">
+          <router-link to="/edit-profile" class="edit-profile-btn">Editar Perfil</router-link>
+        </div>
       </div>
       <div v-if="userPosts.length === 0" class="empty-posts">
         Nenhum post ainda.
@@ -50,7 +60,7 @@
           <p class="post-content">{{ post.content }}</p>
           <div class="post-actions">
             <button @click="likePost(post.id)" class="like-btn">❤️ {{ post.likes_count || 0 }}</button>
-            <button @click="$router.push(`/post/${post.id}`)" class="comment-btn">💬 Comentar</button>
+            <button @click="$router.push(`/post/${post.id}`)" class="comment-btn">💬 {{ getCommentsCount(post) }}</button>
             <template v-if="post.author?.id === authStore.user?.id">
               <button @click="$router.push(`/post/${post.id}/edit`)" class="edit-btn">Editar</button>
               <button @click="deletePost(post.id)" class="delete-btn">Deletar</button>
@@ -97,7 +107,7 @@ onMounted(async () => {
 const loadProfile = async () => {
   loading.value = true
   error.value = ''
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const API_BASE = import.meta.env.VITE_API_BASE
   const headers = { Authorization: `Bearer ${authStore.token}` }
   try {
     const [userRes, postsRes] = await Promise.all([
@@ -174,6 +184,32 @@ const toggleFollowUser = async () => {
   }
 }
 
+// NOVO: Handler pra iniciar DM
+const startDM = async (targetUserId) => {
+  if (!targetUserId || targetUserId === authStore.user?.id) {
+    alert('Não pode enviar mensagem pra si mesmo!')
+    return
+  }
+  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const headers = { Authorization: `Bearer ${authStore.token}` }
+  try {
+    const res = await axios.post(`${API_BASE}conversations/create/${targetUserId}/`, {}, { headers })
+    console.log('DM iniciada:', res.data)
+    router.push(`/directs/${res.data.id}`)
+  } catch (err) {
+    console.error('Erro ao iniciar DM:', err)
+    if (err.response?.status === 400) {
+      alert(err.response.data.error || 'Erro ao iniciar conversa')
+    } else if (err.response?.status === 401) {
+      authStore.logout()
+      router.push('/login')
+    } else {
+      alert('Erro ao iniciar conversa. Tente novamente.')
+    }
+  }
+}
+// FIM NOVO
+
 // Like toggle local pra userPosts (similar ao store)
 const likePost = async (id) => {
   const headers = { Authorization: `Bearer ${authStore.token}` }
@@ -215,6 +251,10 @@ const deletePost = async (id) => {
   }
 }
 
+const getCommentsCount = (post) => {
+  return post.comments ? post.comments.length : 0;
+};
+
 const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('pt-BR')
 </script>
 
@@ -226,19 +266,120 @@ const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('pt-BR')
   object-fit: cover;
   margin-bottom: 10px;
 }
-.edit-btn { background: #ffc107}
-.delete-btn{ background: #dc3545;}
-.profile-container { max-width: 600px; margin: 0 auto; padding: 20px; }
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-button { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
-.profile-header { text-align: center; border-bottom: 1px solid #ddd; padding-bottom: 20px; margin-bottom: 20px; }
-.bio { font-style: italic; color: #666; }
-.stats { display: flex; justify-content: space-around; margin: 10px 0; }
-.follow-btn { background: #28a745; }
-.follow-btn.unfollow { background: #dc3545; }  /* Vermelho pra unfollow */
-.post-card { border: 1px solid #ddd; border-radius: 8px; padding: 15px; margin-bottom: 15px; }
-.post-header { display: flex; justify-content: space-between; align-items: center; }
-.post-actions { display: flex; gap: 10px; margin-top: 10px; }
-.loading, .error, .not-found, .empty-posts { text-align: center; padding: 40px; color: #666; }
-.error { color: red; }
+
+.edit-btn {
+  background: #ffc107
+}
+
+.delete-btn {
+  background: #dc3545;
+}
+
+.profile-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+button {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.profile-header {
+  text-align: center;
+  border-bottom: 1px solid #ddd;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.bio {
+  font-style: italic;
+  color: #666;
+}
+
+.stats {
+  display: flex;
+  justify-content: space-around;
+  margin: 10px 0;
+}
+
+.follow-btn {
+  background: #28a745;
+}
+
+.follow-btn.unfollow {
+  background: #dc3545;
+}
+
+/* NOVO: Estilos pros botões de ação */
+.profile-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.dm-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.edit-profile-btn {
+  background: #ffc107;
+  color: #000;
+  text-decoration: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+}
+
+/* FIM NOVO */
+
+/* Vermelho pra unfollow */
+.post-card {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 15px;
+}
+
+.post-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.post-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.loading,
+.error,
+.not-found,
+.empty-posts {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.error {
+  color: red;
+}
 </style>

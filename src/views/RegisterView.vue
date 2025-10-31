@@ -24,7 +24,7 @@ const credentials = ref({ username: '', email: '', password: '' })
 const error = ref('')
 const registering = ref(false)
 
-const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+const API_BASE = import.meta.env.VITE_API_BASE
 
 const handleRegister = async () => {
   if (credentials.value.password.length < 6) {
@@ -59,10 +59,41 @@ const handleRegister = async () => {
 </script>
 
 <style scoped>
-.register-container { max-width: 300px; margin: 100px auto; padding: 20px; border: 1px solid #ddd; border-radius: 8px; }
-input, button { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
-button { background: #28a745; color: white; border: none; cursor: pointer; }
-button:disabled { background: #ccc; cursor: not-allowed; }
-.error { color: red; font-size: 0.9em; }
-router-link { color: #007bff; text-decoration: none; }
+.register-container {
+    max-width: 300px;
+    margin: 100px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+}
+
+input,
+button {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    box-sizing: border-box;
+}
+
+button {
+    background: #28a745;
+    color: white;
+    border: none;
+    cursor: pointer;
+}
+
+button:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.error {
+    color: red;
+    font-size: 0.9em;
+}
+
+router-link {
+    color: #007bff;
+    text-decoration: none;
+}
 </style>

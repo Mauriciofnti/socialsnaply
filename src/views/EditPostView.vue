@@ -46,7 +46,7 @@ onMounted(async () => {
 const loadPost = async () => {
   loading.value = true
   error.value = ''
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const API_BASE = import.meta.env.VITE_API_BASE
   try {
     const response = await axios.get(`${API_BASE}posts/${postId}/`)
     if (response.data.author.id !== authStore.user.id) {
@@ -76,7 +76,7 @@ const savePost = async () => {
   }
   saving.value = true
   error.value = ''
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const API_BASE = import.meta.env.VITE_API_BASE
   try {
     const response = await axios.patch(`${API_BASE}posts/${postId}/`, { content: form.value.content.trim() })
     alert('Post atualizado!')

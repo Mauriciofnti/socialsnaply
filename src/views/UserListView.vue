@@ -56,7 +56,7 @@ onMounted(async () => {
 const loadUsers = async () => {
   loading.value = true
   error.value = ''
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const API_BASE = import.meta.env.VITE_API_BASE
   try {
     const response = await axios.get(`${API_BASE}users/`)
     users.value = response.data
@@ -70,19 +70,85 @@ const loadUsers = async () => {
 </script>
 
 <style scoped>
-.user-item { border: 1px solid #ddd; border-radius: 8px; padding: 15px; display: flex; gap: 10px; }
-.user-link { text-decoration: none; color: inherit; display: flex; align-items: center; }
-.user-img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
-.user-link div { flex: 1; }
-.user-list-container { max-width: 600px; margin: 0 auto; padding: 20px; }
-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-button { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; }
-.users-list { display: flex; flex-direction: column; gap: 15px; }
-.user-item { border: 1px solid #ddd; border-radius: 8px; padding: 15px; }
-.user-link { text-decoration: none; color: inherit; }
-.user-link h3 { margin: 0 0 5px 0; }
-.user-link p { margin: 0 0 5px 0; color: #666; }
-.user-link small { color: #999; }
-.loading, .error, .empty { text-align: center; padding: 40px; color: #666; }
-.error { color: red; }
+.user-item {
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+}
+
+.user-link {
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.user-img {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.user-link div {
+    flex: 1;
+}
+
+.user-list-container {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.users-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.user-link h3 {
+    margin: 0 0 5px 0;
+}
+
+.user-link p {
+    margin: 0 0 5px 0;
+    color: #666;
+}
+
+.user-link small {
+    color: #999;
+}
+
+.loading,
+.error,
+.empty {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.error {
+    color: red;
+}
 </style>
