@@ -7,15 +7,16 @@
         <p>Nenhuma conversa ainda. Inicie uma no perfil!</p>
       </div>
       <div v-else class="conversations">
+        <!-- FIX: v-for com filtro pra ignorar nulls + key safe -->
         <div
-          v-for="conv in conversations"
-          :key="conv.id"
+          v-for="conv in conversations.filter(conv => conv != null)"
+          :key="conv?.id || 'unknown'"
           class="conversation-item"
           @click="openConversation(conv.id)"
           :class="{ active: currentConversationId === conv.id }"
         >
           <img
-            :src="getOtherParticipant(conv).profile_picture || '/default-avatar.png'"
+            :src="getOtherParticipant(conv).profile_picture || '/static/default-avatar.png'"
             :alt="getOtherParticipant(conv).username"
             class="avatar"
           />
@@ -36,7 +37,7 @@
     <main v-else class="conversation-chat">
       <header class="chat-header">
         <img
-          :src="currentOtherParticipant.profile_picture || '/default-avatar.png'"
+          :src="currentOtherParticipant.profile_picture || '/static/default-avatar.png'"
           :alt="currentOtherParticipant.username"
           class="avatar"
         />
@@ -45,13 +46,14 @@
       </header>
 
       <div class="messages">
+        <!-- FIX: v-for com filtro pra ignorar nulls + key safe -->
         <div
-          v-for="msg in currentConversation.messages"
-          :key="msg.id"
-          :class="['message', { 'sent': msg.author.id === authStore.user.id }]"
+          v-for="msg in currentConversation.messages.filter(msg => msg != null)"
+          :key="msg?.id || 'unknown-msg'"  <!-- <-- NOVO: Optional chaining no key; fallback se id null -->
+          :class="['message', { 'sent': msg.author?.id === authStore.user?.id }]"  <!-- <-- NOVO: Safe .author.id -->
         >
           <div class="message-content">
-            <strong>{{ msg.author.username }}:</strong>
+            <strong>{{ msg.author?.username || 'Anônimo' }}:</strong>  <!-- <-- NOVO: Fallback se author null -->
             <p>{{ msg.content }}</p>
             <small>{{ formatTime(msg.created_at) }}</small>
           </div>
@@ -98,7 +100,8 @@ const fetchConversations = async () => {
   try {
     loading.value = true
     const res = await axios.get(`${API_BASE}conversations/`, { headers: headers.value })
-    conversations.value = res.data
+    // FIX: Filtra nulls no array retornado da API
+    conversations.value = (res.data || []).filter(conv => conv != null)
     loading.value = false
   } catch (err) {
     console.error('Erro ao carregar conversas:', err)
@@ -112,14 +115,23 @@ const fetchConversationById = async (convId) => {
   try {
     loading.value = true
     const res = await axios.get(`${API_BASE}conversations/${convId}/`, { headers: headers.value })  // Assuma endpoint GET pra conv única (adicione se não tiver)
+    const convData = res.data  // Assume convData não null
+    if (!convData) {
+      console.error('Resposta da API vazia pra conv')
+      loading.value = false
+      return
+    }
+    // FIX: Filtra nulls nas messages
+    convData.messages = (convData.messages || []).filter(msg => msg != null)
+    
     // Merge na lista ou set direto
     const existingIndex = conversations.value.findIndex(c => c.id === convId)
     if (existingIndex > -1) {
-      conversations.value[existingIndex] = res.data
+      conversations.value[existingIndex] = convData
     } else {
-      conversations.value.push(res.data)
+      conversations.value.push(convData)
     }
-    currentConversation.value = res.data
+    currentConversation.value = convData
     currentConversationId.value = convId
     loading.value = false
   } catch (err) {
@@ -134,7 +146,7 @@ const fetchConversationById = async (convId) => {
 
 // Abre uma conversa específica (agora await-safe)
 const openConversation = async (convId) => {
-  const conv = conversations.value.find(c => c.id === convId)
+  const conv = conversations.value.find(c => c && c.id === convId)  // FIX: Check c != null
   if (conv) {
     // Já tem na lista — usa local
     currentConversation.value = conv
@@ -148,7 +160,8 @@ const openConversation = async (convId) => {
 
 // Pega o outro participante (não o logado)
 const getOtherParticipant = (conv) => {
-  return conv?.participants?.find(p => p.id !== authStore.user?.id) || { username: 'Desconhecido', profile_picture: '' }
+  if (!conv || !conv.participants) return { username: 'Desconhecido', profile_picture: '' }  // FIX: Early return se conv null
+  return conv.participants.find(p => p.id !== authStore.user?.id) || { username: 'Desconhecido', profile_picture: '' }
 }
 
 // Computed pro outro user na conversa atual
@@ -156,13 +169,7 @@ const currentOtherParticipant = computed(() => getOtherParticipant(currentConver
 
 // Envia mensagem
 const sendMessage = async () => {
-  if (!newMessage.value.trim()) return  // Já tem, mas reforça
-  if (!currentConversation.value || !currentConversation.value.id) {
-    console.error('Conversa inválida - ID:', currentConversation.value?.id)  // Log debug
-    alert('Conversa inválida. Volte à lista e abra novamente.')
-    backToList()
-    return
-  }
+  if (!newMessage.value.trim() || !currentConversation.value) return
   sending.value = true
   try {
     const res = await axios.post(
@@ -175,20 +182,13 @@ const sendMessage = async () => {
     newMessage.value = ''
     // Refresh lista pra atualizar last_message em outras views
     await fetchConversations()
-    console.log('Msg enviada com sucesso!')  // Log sucesso
   } catch (err) {
-    console.error('Erro ao enviar mensagem:', err.response?.data || err.message)  // Log response
+    console.error('Erro ao enviar mensagem:', err)
     if (err.response?.status === 401) router.push('/login')
-    else if (err.response?.status === 404) {
-      alert('Conversa não encontrada. Recarregue a página.')
-      backToList()  // Volta pra lista
-    } else if (err.response?.status === 403) alert('Você não faz parte dessa conversa')
-    else alert('Erro ao enviar. Tente novamente.')
   } finally {
     sending.value = false
   }
 }
-
 
 // Volta pra lista
 const backToList = () => {
@@ -201,22 +201,16 @@ const formatTime = (timeStr) => {
   return new Date(timeStr).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }
 
-// Monte: Carrega dados (AGORA COM AWAIT - FIX PRINCIPAL)
-onMounted(async () => {  // <-- NOVO: async pro await
-  if (!authStore.token) {
-    router.push('/login')
-    return
-  }
-  
-  // Carrega lista primeiro
-  await fetchConversations()
-  
-  // Se ID na rota, abre (agora lista tá carregada)
-  if (route.params.id) {
-    await openConversation(route.params.id)
+// Monte: Carrega dados
+onMounted(async () => {
+  if (!authStore.token) router.push('/login')
+  else {
+    fetchConversations()
+    if (route.params.id) openConversation(route.params.id)
   }
 })
 </script>
+
 
 <!-- Estilos iguais ao anterior -->
 <style scoped>

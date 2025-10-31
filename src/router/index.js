@@ -19,6 +19,7 @@ const routes = [
   { path: '/profile/:id', component: ProfileView, meta: { requiresAuth: true } },
   { path: '/post/:id', component: PostView, meta: { requiresAuth: true } },  
   { path: '/post/:id/edit', component: EditPostView, meta: { requiresAuth: true } },
+  { path: '/directs', component: DirectView, meta: { requiresAuth: true } },
   { path: '/directs/:id', component: DirectView, meta: { requiresAuth: true } }
 ]
 
