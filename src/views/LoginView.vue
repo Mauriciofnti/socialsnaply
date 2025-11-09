@@ -5,6 +5,10 @@
       <input v-model="credentials.username" type="text" placeholder="username" required autocomplete="username"/>
       <input v-model="credentials.password" type="password" placeholder="senha" required autocomplete="current-password" />
       <button type="submit">Entrar</button>
+      <div v-if="loading" class="spinner"></div>
+      <p v-if="loading" class="text-gray-600 text-center max-w-sm">
+        ⏳ O servidor está iniciando... isso pode levar até <strong>2 minutos</strong> no primeiro acesso.
+      </p>
       <p v-if="error" class="error">{{ error }}</p>
     </form>
   </div>
@@ -19,13 +23,16 @@ const router = useRouter()
 const authStore = useAuthStore()
 const credentials = ref({ username: '', password: '' })
 const error = ref('')
+const loading = ref(false)
 
 const handleLogin = async () => {
   error.value = ''
+  loading.value = true
+
   const result = await authStore.login(credentials.value)
-  
+  if (result) loading.value = false
+
   if (result.success) {
-    console.log('Redirecionando pro feed!')
     router.push('/feed')
   } else if (result.error) {
     const backendError = result.error
@@ -64,10 +71,11 @@ button {
 }
 
 button {
-  background: #007bff;
-  color: white;
+  background: var(--base-color);
+  color: #000;
   border: none;
   cursor: pointer;
+  font-weight: 600;
 }
 
 form{
@@ -79,5 +87,19 @@ form{
 .error {
   color: red;
   font-size: 0.9em;
+}
+
+.spinner {
+  width: 8px;
+  height: 8px;
+  border: 5px solid #000;
+  border-top-color: var(--base-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

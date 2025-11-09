@@ -8,26 +8,24 @@
     <div v-else-if="error" class="error">{{ error }}</div>
     <div v-else-if="users.length === 0" class="empty">Nenhum usuário encontrado.</div>
     <div v-else class="users-list">
-      <div v-for="u in users" :key="u.id" class="user-item">
-        <router-link :to="`/profile/${u.id}`" class="user-link">
-            <img 
-            v-if="u.profile_picture" 
-            :src="u.profile_picture" 
-            alt="Foto de {{ u.username }}" 
-            class="user-img" 
-            @error="handleImgError"
-            />
-            <img 
-            v-else 
-            src="/static/default-avatar.png" 
-            alt="Avatar Padrão" 
-            class="user-img" 
-            />
-          <h3>{{ u.username }}</h3>
-          <p>{{ u.bio || 'Sem bio' }}</p>
-          <small>{{ u.email }}</small>
-        </router-link>
-      </div>
+      <router-link v-for="u in users" :key="u.id" :to="`/profile/${u.id}`" class="user-item">
+          <img 
+          v-if="u.profile_picture" 
+          :src="u.profile_picture" 
+          alt="Foto de {{ u.username }}" 
+          class="user-img" 
+          @error="handleImgError"
+          />
+          <img 
+          v-else 
+          src="/static/default-avatar.png" 
+          alt="Avatar Padrão" 
+          class="user-img" 
+          />
+        <h3>{{ u.username }}</h3>
+        <!-- <p>{{ u.bio || 'Sem bio' }}</p> -->
+        <small>{{ u.email }}</small>
+      </router-link>
     </div>
   </div>
 </template>
@@ -78,14 +76,16 @@ const loadUsers = async () => {
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 15px;
-}
-
-.user-link {
     text-decoration: none;
     color: inherit;
     display: flex;
     flex-direction: column;
     align-items: center;
+}
+
+.user-item:hover {
+  background-color: #d7dd91;
+  transition: all .5s ease;
 }
 
 .user-img {

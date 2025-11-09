@@ -149,7 +149,7 @@ const loadProfile = async () => {
 
 const toggleFollowUser = async () => {
   const previousIsFollowing = isFollowing.value
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const API_BASE = import.meta.env.VITE_API_BASE
   const headers = { Authorization: `Bearer ${authStore.token}` }
   try {
     const response = await axios.post(`${API_BASE}users/${userId}/toggle_follow/`, {}, { headers })
@@ -190,7 +190,7 @@ const startDM = async (targetUserId) => {
     alert('Não pode enviar mensagem pra si mesmo!')
     return
   }
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const API_BASE = import.meta.env.VITE_API_BASE
   const headers = { Authorization: `Bearer ${authStore.token}` }
   try {
     const res = await axios.post(`${API_BASE}conversations/create/${targetUserId}/`, {}, { headers })
@@ -214,7 +214,7 @@ const startDM = async (targetUserId) => {
 const likePost = async (id) => {
   const headers = { Authorization: `Bearer ${authStore.token}` }
   try {
-    const response = await axios.post(`${import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/' }posts/${id}/like/`, {}, { headers })
+    const response = await axios.post(`${import.meta.env.VITE_API_BASE}posts/${id}/like/`, {}, { headers })
     const message = response.data.message
     const post = userPosts.value.find(p => p.id === id)
     if (post) {
@@ -232,7 +232,7 @@ const likePost = async (id) => {
 
 const deletePost = async (id) => {
   if (!confirm('Tem certeza que quer deletar este post?')) return
-  const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8000/api/'
+  const API_BASE = import.meta.env.VITE_API_BASE
   const headers = { Authorization: `Bearer ${authStore.token}` }
   try {
     await axios.delete(`${API_BASE}posts/${id}/`, { headers })

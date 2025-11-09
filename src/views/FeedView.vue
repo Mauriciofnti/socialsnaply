@@ -22,7 +22,7 @@
         <button @click="createPost" :disabled="!newPostContent">Postar algo</button>
       </div>
       <div v-else class="posts-list">
-        <button v-for="post in postsStore.posts" :key="post.id" @click="$router.push(`/post/${post.id}`)" class="post-card">
+        <div v-for="post in postsStore.posts" :key="post.id" class="post-card">
           <router-link :to="`/profile/${post.author?.id || post.id}`" class="profile-link">
             <div class="post-header">
               <img 
@@ -43,34 +43,36 @@
             </div>
           </router-link>
 
-            <p class="post-content">{{ post.content }}</p>
-            <div class="post-actions">
-              <button @click="likePost(post.id)" class="like-btn"> ❤️ {{ post.likes_count || 0 }}</button>
-              <button @click="$router.push(`/post/${post.id}`)" class="comment-btn">💬 ({{ getCommentsCount(post) }}) Comentar</button>
-              
-              <template v-if="post.author?.id === authStore.user?.id">
+          <p class="post-content">{{ post.content }}</p>
+          <div class="post-actions">
+            <button @click="likePost(post.id)" class="like-btn"> ❤️ {{ post.likes_count || 0 }}</button>
+            <button @click="$router.push(`/post/${post.id}`)" class="comment-btn">💬 ({{ getCommentsCount(post) }}) Comentar</button>
+            
+            <template v-if="post.author?.id === authStore.user?.id">
               <div class="userPost">
-                <button @click="$router.push(`/post/${post.id}/edit`)" class="edit-btn">Editar</button>
-                <button @click="deletePost(post.id)" class="delete-btn">Deletar</button>
+                <button @click.stop="$router.push(`/post/${post.id}/edit`)" class="edit-btn" :disabled="deletingId === post.id">Editar</button>  <!-- .stop adicionado -->
+                <button @click.stop="deletePost(post.id)" class="delete-btn" :disabled="deletingId === post.id">Deletar</button>  <!-- .stop adicionado + disabled durante delete -->
               </div>
-              </template>
-            </div>
-        </button>
+            </template>
+          </div>
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePostsStore } from '@/stores/posts'
 import { useAuthStore } from '@/stores/auth'
+import axios from 'axios'
 
 const router = useRouter()
 const postsStore = usePostsStore()
 const authStore = useAuthStore()
 const newPostContent = ref('')
+const deletingId = ref(null)  // Para disable durante delete
 
 onMounted(async () => {
   if (!authStore.token) {
@@ -90,14 +92,18 @@ const likePost = (id) => postsStore.likePost(id)
 
 const deletePost = async (id) => {
   if (!confirm('Tem certeza que quer deletar este post?')) return
+  deletingId.value = id
   const API_BASE = import.meta.env.VITE_API_BASE
   try {
     await axios.delete(`${API_BASE}posts/${id}/`)
-    postsStore.posts = postsStore.posts.filter(p => p.id !== id)
     alert('Post deletado!')
+    await postsStore.fetchFeed()
+    await nextTick()
   } catch (err) {
     console.error('Erro ao deletar:', err)
     alert('Erro ao deletar post')
+  } finally {
+    deletingId.value = null
   }
 }
 
@@ -106,10 +112,13 @@ const getCommentsCount = (post) => {
 };
 
 const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('pt-BR')
+
+const handleImgError = (event) => {
+  event.target.src = '/static/default-avatar.png'
+}
 </script>
 
 <style scoped>
-@import './src/assets/main.css';
 .userPost{
   display: flex;
   gap: 5px;
@@ -183,6 +192,7 @@ header {
     padding: 10px;
     margin-top: 10px;
     cursor: pointer;
+    margin-bottom: 10px;
 }
 
 .post-card {
@@ -190,14 +200,25 @@ header {
     border-radius: 8px;
     margin-bottom: 15px;
     padding: 15px;
-    width: 100%;
+    cursor: pointer;
+}
+
+.post-card:hover {
+    background-color: #f8f9fa;
 }
 
 .post-header {
     display: flex;
     align-items: center;
     border-radius: 5px;
-    box-shadow: .1px .1px #000;
+    box-shadow: .1px .1px 5px #d7dd91;
+    background-color: #d7dd91;
+    transition: all .5s ease;
+    padding: 0 10px
+}
+
+.post-header:hover {
+  box-shadow: .1px .1px 5px #000;
 }
 
 .post-content {
@@ -225,8 +246,8 @@ button {
 .profile-link {
     margin-left: auto;
     text-decoration: none;
-    color: #007bff;
     display: block;
+    color: #000;
 }
 
 .loading,
@@ -234,5 +255,11 @@ button {
     text-align: center;
     padding: 40px;
     color: #666;
+}
+
+/* Desabilita visualmente botões em loading */
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

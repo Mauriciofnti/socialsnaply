@@ -1,13 +1,22 @@
 <template>
   <div class="direct-view">
-    <!-- Lista de Conversas (esquerda ou mobile full) -->
-    <aside v-if="!currentConversation" class="conversations-list">
-      <h2>Diretos</h2>
-      <div v-if="conversations.length === 0" class="empty-state">
+    <!-- Backdrop para mobile quando lista aberta e chat visível -->
+    <div v-if="showList && currentConversation && isMobile" class="backdrop" @click="closeList"></div>
+    
+    <aside 
+      v-if="!currentConversation || showList" 
+      class="conversations-list"
+      :class="{ 'open': showList && isMobile }"
+    >
+      <header class="list-header">
+        <h2>Directs</h2>
+        <button v-if="isMobile" @click="closeList" class="close-btn">×</button>
+      </header>
+      <div v-if="loading" class="loading-conv">Carregando...</div>
+      <div v-else-if="conversations.length === 0" class="empty-state">
         <p>Nenhuma conversa ainda. Inicie uma no perfil!</p>
       </div>
       <div v-else class="conversations">
-        <!-- FIX: v-for com filtro pra ignorar nulls + key safe -->
         <div
           v-for="conv in conversations.filter(conv => conv != null)"
           :key="conv?.id || 'unknown'"
@@ -15,11 +24,15 @@
           @click="openConversation(conv.id)"
           :class="{ active: currentConversationId === conv.id }"
         >
-          <img
-            :src="getOtherParticipant(conv).profile_picture || '/static/default-avatar.png'"
+          <img v-if="getOtherParticipant(conv).profile_picture "
+            :src="getOtherParticipant(conv).profile_picture"
             :alt="getOtherParticipant(conv).username"
             class="avatar"
           />
+          <img v-else src="/static/default-avatar.png" 
+            alt="Usuário sem foto"
+            class="avatar"
+          >
           <div class="info">
             <p class="username">{{ getOtherParticipant(conv).username }}</p>
             <p v-if="conv.last_message" class="preview">
@@ -33,21 +46,26 @@
       <button @click="$router.push('/users')" class="new-dm-btn">Nova Mensagem</button>
     </aside>
 
-    <!-- View da Conversa Específica (direita ou full em mobile) -->
-    <main v-else class="conversation-chat">
+    <main v-if="currentConversation" class="conversation-chat">
       <header class="chat-header">
-        <img
-          :src="currentOtherParticipant.profile_picture || '/static/default-avatar.png'"
+        <button v-if="isMobile" @click="openList" class="menu-btn">☰</button>
+        <img v-if="currentOtherParticipant.profile_picture"
+          :src="currentOtherParticipant.profile_picture"
           :alt="currentOtherParticipant.username"
           class="avatar"
         />
+        <img v-else src="/static/default-avatar.png" 
+        alt="Usuário sem foto"
+        class="avatar"
+        >
         <h3>{{ currentOtherParticipant.username }}</h3>
-        <button @click="backToList">← Voltar</button>
+        <button @click="backToList" class="back-btn">← Voltar</button>
       </header>
 
       <div class="messages">
-        <!-- FIX: v-for com filtro pra ignorar nulls + key safe -->
+        <div v-if="loading" class="loading-conv">Carregando mensagens...</div>
         <div
+          v-else
           v-for="msg in currentConversation.messages.filter(msg => msg != null)"
           :key="msg?.id || 'unknown-msg'"
           :class="['message', { 'sent': msg.author?.id === authStore.user?.id }]"
@@ -92,6 +110,10 @@ const currentConversation = ref(null)
 const newMessage = ref('')
 const sending = ref(false)
 const loading = ref(false)
+const showList = ref(true)  // Controla visibilidade da lista no mobile
+
+// Detecta mobile (simples, sem resize listener pra simplicidade; ajuste se precisar)
+const isMobile = ref(window.innerWidth <= 768)
 
 const headers = computed(() => ({ Authorization: `Bearer ${authStore.token}` }))
 
@@ -151,12 +173,18 @@ const openConversation = async (convId) => {
     // Já tem na lista — usa local
     currentConversation.value = conv
     currentConversationId.value = convId
+    if (isMobile.value) showList.value = false  // Fecha lista no mobile
     router.replace(`/directs/${convId}`)
   } else {
     // Não tem — fetch específica
     await fetchConversationById(convId)
+    if (isMobile.value) showList.value = false  // Fecha lista no mobile
   }
 }
+
+// NOVO: Funções pra toggle lista no mobile
+const openList = () => { showList.value = true }
+const closeList = () => { showList.value = false }
 
 // Pega o outro participante (não o logado)
 const getOtherParticipant = (conv) => {
@@ -192,6 +220,9 @@ const sendMessage = async () => {
 
 // Volta pra lista
 const backToList = () => {
+  if (isMobile.value) {
+    showList.value = true  // Abre lista no mobile
+  }
   currentConversation.value = null
   router.push('/directs')
 }
@@ -206,16 +237,41 @@ onMounted(async () => {
   if (!authStore.token) router.push('/login')
   else {
     fetchConversations()
-    if (route.params.id) openConversation(route.params.id)
+    if (route.params.id) {
+      openConversation(route.params.id)
+      if (isMobile.value) showList.value = false  // Esconde lista se abrindo chat direto no mobile
+    }
   }
 })
 </script>
 
-
-<!-- Estilos iguais ao anterior -->
 <style scoped>
-.direct-view { display: flex; height: 100vh; }
-.conversations-list { width: 300px; border-right: 1px solid #ddd; overflow-y: auto; padding: 10px; }
+.direct-view { display: flex; height: 100vh; position: relative; }  /* Adicionado position relative pro backdrop */
+
+.conversations-list { 
+  width: 300px; 
+  border-right: 1px solid #ddd; 
+  overflow-y: auto; 
+  padding: 10px; 
+  background: white;  /* Fundo branco pro mobile */
+  transition: left 0.3s ease;  /* Transição suave */
+}
+
+/* Novo header pra lista no mobile */
+.list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: #999;
+}
+
 .conversation-item { display: flex; align-items: center; padding: 10px; cursor: pointer; border-radius: 8px; }
 .conversation-item:hover, .active { background: #f0f0f0; }
 .avatar { width: 40px; height: 40px; border-radius: 50%; margin-right: 10px; }
@@ -226,9 +282,35 @@ onMounted(async () => {
 .empty-state { text-align: center; color: gray; padding: 20px; }
 .new-dm-btn { width: 100%; padding: 10px; background: #007bff; color: white; border: none; border-radius: 5px; margin-top: 10px; }
 
-.conversation-chat { flex: 1; display: flex; flex-direction: column; }
-.chat-header { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #ddd; background: #f8f9fa; }
+.conversation-chat { flex: 1; display: flex; flex-direction: column; width: 100%; }  /* Full width */
+
+.chat-header { 
+  display: flex; 
+  align-items: center; 
+  padding: 10px; 
+  border-bottom: 1px solid #ddd; 
+  background: #f8f9fa; 
+  position: sticky; 
+  top: 0; 
+  z-index: 5;
+}
+.menu-btn {  /* Novo: Botão menu no mobile */
+  background: none;
+  border: none;
+  font-size: 24px;
+  margin-right: 10px;
+  cursor: pointer;
+  color: #007bff;
+}
 .chat-header h3 { flex: 1; margin: 0; }
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: #007bff;
+}
+
 .messages { flex: 1; overflow-y: auto; padding: 10px; }
 .message { margin-bottom: 10px; }
 .message.sent { text-align: right; }
@@ -240,12 +322,52 @@ small { color: gray; font-size: 0.8em; }
 .message-input button { padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 20px; cursor: pointer; }
 .message-input button:disabled { background: #ccc; cursor: not-allowed; }
 
-/* Mobile: Lista full, chat em modal ou toggle */
-@media (max-width: 768px) {
-  .conversations-list { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
-  .conversation-chat { margin-left: 0; }
-}
-
 /* NOVO: Loading na conv */
 .loading-conv { text-align: center; padding: 20px; color: gray; }
+
+/* NOVO: Backdrop pro mobile */
+.backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 9;
+}
+
+/* Mobile: Lista slide-in */
+@media (max-width: 768px) {
+  .conversations-list { 
+    position: fixed; 
+    top: 0; 
+    left: -100%;  /* Offscreen por default */
+    width: 80%;  /* Um pouco menor que 100% pra backdrop */
+    max-width: 300px;
+    height: 100%; 
+    z-index: 10; 
+    box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  }
+  .conversations-list.open { left: 0; }  /* Slide in quando open */
+  
+  .conversation-chat { 
+    width: 100%; 
+    margin-left: 0; 
+  }
+  
+  /* Ajustes no header mobile */
+  .chat-header {
+    padding: 15px;
+  }
+  .menu-btn, .back-btn {
+    font-size: 20px;
+    padding: 5px;
+  }
+  
+  /* Avatar menor no mobile */
+  .avatar {
+    width: 35px;
+    height: 35px;
+  }
+}
 </style>

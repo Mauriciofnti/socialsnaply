@@ -6,6 +6,10 @@
       <input v-model="credentials.email" type="email" placeholder="Email" required autocomplete="email" />
       <input v-model="credentials.password" type="password" placeholder="Senha (mín. 6 chars)" required autocomplete="new-password" minlength="6" />
       <button type="submit" :disabled="registering">Cadastrar</button>
+      <div v-if="loading" class="spinner"></div>
+      <p v-if="loading" class="text-gray-600 text-center max-w-sm">
+        ⏳ O servidor está iniciando... isso pode levar até <strong>2 minutos</strong> no primeiro acesso.
+      </p>
       <p v-if="error" class="error">{{ error }}</p>
       <p>Já tem conta? <router-link to="/login">Faça login</router-link></p>
     </form>
@@ -23,10 +27,12 @@ const authStore = useAuthStore()
 const credentials = ref({ username: '', email: '', password: '' })
 const error = ref('')
 const registering = ref(false)
+const loading = ref(false)
 
 const API_BASE = import.meta.env.VITE_API_BASE
 
 const handleRegister = async () => {
+  loading.value = true
   if (credentials.value.password.length < 6) {
     error.value = 'Senha deve ter pelo menos 6 caracteres'
     return
@@ -35,6 +41,7 @@ const handleRegister = async () => {
   error.value = ''
   try {
     const response = await axios.post(`${API_BASE}users/`, credentials.value)
+    if (response) loading.value = false
     await authStore.login({ username: credentials.value.username, password: credentials.value.password })
     if (authStore.user) {
       router.push('/feed')
@@ -76,8 +83,9 @@ button {
 }
 
 button {
-    background: #28a745;
-    color: white;
+    background: var(--base-color);
+    color: #000;
+    font-weight: 600;
     border: none;
     cursor: pointer;
 }

@@ -1,7 +1,7 @@
 <template>
   <footer class="app-footer">
     <p>&copy; 2025 Snaply. Feito com Vue.js e Django. | <a href="/privacy">Privacidade</a></p>
-      <button v-if="authStore.user" @click="logout" class="logout-btn">Logout</button>
+    <button v-if="authStore.user" @click="logout" class="logout-btn">Logout</button>
 
   </footer>
 </template>
